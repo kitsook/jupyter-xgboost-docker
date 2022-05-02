@@ -70,7 +70,7 @@ USER ml-user
 WORKDIR /home/ml-user
 
 # cert for testing purpose
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -subj "/C=CA/ST=BC/L=Vancouver/O=xgboost-test"
+RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -subj "/C=CA/ST=BC/L=Vancouver/O=xgboost-test"
 
 ## Setup Jupyter
 RUN jupyter notebook --generate-config && \
