@@ -1,0 +1,12 @@
+version: "3"
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.local
+    image: jupyter-xgboost
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./persist/ml-disk:/ml-disk
+
