@@ -12,5 +12,6 @@ docker-compose build
 # start containers
 docker-compose up -d
 # point your browser to https://localhost:8888/
-# you may need to trust the self-signed certificate. the login password is "password". to change it, read comments in jupyter_notebook_config.py
+# you may need to trust the self-signed certificate.
+# the login password is "password". to change it, read comments in jupyter_notebook_config.py
 ```
