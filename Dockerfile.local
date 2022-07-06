@@ -16,14 +16,16 @@ RUN apt-get update && apt-get install -y \
 
 #Installing all ML python libraries , Jupyter and Extensions 
 # using older version of numpy so we can install numba. removed rff2pandas
-RUN pip3 install scipy numpy==1.21.6 matplotlib pandas statsmodels sklearn \
-  theano tensorflow keras xgboost shap jupyterlab torch torchvision \
-  scikit-plot kaggle seaborn jupyter_contrib_nbextensions \
-  jupyter_nbextensions_configurator 
+RUN pip3 install scipy==1.8.0 numpy==1.21.6 matplotlib==3.5.1 pandas==1.4.2 statsmodels==0.13.2 scikit-learn==1.0.2 \
+  theano==1.0.5 tensorflow==2.8.0 keras==2.8.0 xgboost==1.6.0 shap==0.40.0 \
+  jupyterlab==3.3.4 \
+  torch==1.11.0 torchvision==0.12.0 \
+  scikit-plot==0.3.7 kaggle==1.5.12 seaborn==0.11.2 jupyter_contrib_nbextensions==0.5.1 \
+  jupyter_nbextensions_configurator==0.4.1 dowhy==0.7.1 onnx==1.12.0 protobuf==3.20.1
 
 
 #Install Graphviz for python and R
-RUN apt-get update && apt-get install -y graphviz && pip3 install graphviz
+RUN apt-get update && apt-get install -y graphviz libgraphviz-dev graphviz-dev && pip3 install graphviz==0.20 pygraphviz==1.9 
 
 #Install R
 RUN apt-get update && \
@@ -33,7 +35,7 @@ RUN apt-get update && \
   apt-get install -y r-base
 
 #Install rpy2 to run R in pythong Kernels
-RUN pip3 install rpy2
+RUN pip3 install rpy2==3.5.1
 
 # Install R packages
 RUN R -e "install.packages(c('xgboost','roxygen2', 'rversions','repr', 'IRdisplay', 'evaluate', 'crayon', 'pbdZMQ', 'devtools', 'uuid', 'digest','BiocManager','dplyr','ggplot2','tidyr','igraph','mice'))" && \
@@ -73,10 +75,15 @@ WORKDIR /home/ml-user
 RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -subj "/C=CA/ST=BC/L=Vancouver/O=xgboost-test"
 
 ## Setup Jupyter
-RUN jupyter notebook --generate-config && \
+RUN jupyter lab --generate-config && \
   jupyter nbextensions_configurator enable --user && \
-  jupyter contrib nbextension install --user
-COPY --chown=ml-user jupyter_notebook_config.py /home/ml-user/.jupyter/jupyter_notebook_config.py
+  jupyter contrib nbextension install --user 
+RUN echo "c.ServerApp.certfile = u'/home/ml-user/mycert.pem'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
+  echo "c.ServerApp.ip = '*'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
+  echo "c.ServerApp.keyfile = u'/home/ml-user/mykey.key'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
+  echo "c.ServerApp.notebook_dir = '/ml-disk'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
+  echo "c.ServerApp.open_browser = False" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
+  echo "c.ServerApp.password = 'argon2:\$argon2id\$v=19\$m=10240,t=10,p=8\$S0NsAL2R6FCzDV9DLQzH4g\$Xy4KM24jEjab4o47EOWbaciNPzGm8X0Y9bhgCN2cyiU'" >> /home/ml-user/.jupyter/jupyter_lab_config.py 
 COPY entryPoint.sh /root
 USER root
 WORKDIR /root
