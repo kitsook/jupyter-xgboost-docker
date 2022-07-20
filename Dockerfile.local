@@ -19,9 +19,9 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install scipy==1.8.0 numpy==1.21.6 matplotlib==3.5.1 pandas==1.4.2 statsmodels==0.13.2 scikit-learn==1.0.2 \
   theano==1.0.5 tensorflow==2.8.0 keras==2.8.0 xgboost==1.6.0 shap==0.40.0 \
   jupyterlab==3.3.4 \
-  torch==1.11.0 torchvision==0.12.0 \
+  torch==1.11.0 torchvision==0.12.0 torchaudio==0.12.0 ipywidgets==7.7.1 \
   scikit-plot==0.3.7 kaggle==1.5.12 seaborn==0.11.2 jupyter_contrib_nbextensions==0.5.1 \
-  jupyter_nbextensions_configurator==0.4.1 dowhy==0.7.1 onnx==1.12.0 protobuf==3.20.1
+  jupyter_nbextensions_configurator==0.4.1 dowhy==0.7.1 onnx==1.12.0 protobuf==3.20.1 
 
 
 #Install Graphviz for python and R
