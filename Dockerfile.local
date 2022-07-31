@@ -4,10 +4,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
 
 # Install Ubuntu packages
-RUN apt-get update && apt-get install -y wget bzip2 ca-certificates \
+RUN apt-get update && apt-get install -y git wget bzip2 ca-certificates \
   build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev curl git-core \
-  htop pkg-config unzip unrar tree freetds-dev vim sudo nodejs npm net-tools \
-  flex perl automake bison libtool byacc
+  htop pkg-config unzip unrar tree freetds-dev vim sudo nodejs npm net-tools librsvg2-dev \
+  flex perl automake bison libtool byacc libtiff-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev
 
 #Installing Python and PIP
 RUN apt-get update && apt-get install -y \
@@ -19,19 +19,18 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install scipy==1.8.0 numpy==1.21.6 matplotlib==3.5.1 pandas==1.4.2 statsmodels==0.13.2 scikit-learn==1.0.2 \
   theano==1.0.5 tensorflow==2.8.0 keras==2.8.0 xgboost==1.6.0 shap==0.40.0 \
   jupyterlab==3.3.4 \
-  torch==1.11.0 torchvision==0.12.0 torchaudio==0.12.0 ipywidgets==7.7.1 \
+  torch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 ipywidgets==7.7.1 \
   scikit-plot==0.3.7 kaggle==1.5.12 seaborn==0.11.2 jupyter_contrib_nbextensions==0.5.1 \
-  jupyter_nbextensions_configurator==0.4.1 dowhy==0.7.1 onnx==1.12.0 protobuf==3.20.1 
-
+  jupyter_nbextensions_configurator==0.4.1 dowhy==0.7.1 onnx==1.12.0 protobuf==3.20.1
 
 #Install Graphviz for python and R
 RUN apt-get update && apt-get install -y graphviz libgraphviz-dev graphviz-dev && pip3 install graphviz==0.20 pygraphviz==1.9 
 
 #Install R
-RUN apt-get update && \
-  apt-get install -y dirmngr gnupg apt-transport-https ca-certificates software-properties-common && \
-  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 && \
-  add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/' && \
+RUN apt-get update -qq && \
+  apt-get install -y dirmngr ca-certificates software-properties-common && \
+  wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
+  add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" && \
   apt-get install -y r-base
 
 #Install rpy2 to run R in pythong Kernels
@@ -40,14 +39,8 @@ RUN pip3 install rpy2==3.5.1
 # Install R packages
 RUN R -e "install.packages(c('xgboost','roxygen2', 'rversions','repr', 'IRdisplay', 'evaluate', 'crayon', 'pbdZMQ', 'devtools', 'uuid', 'digest','BiocManager','dplyr','ggplot2','tidyr','igraph','mice'))" && \
   R -e "devtools::install_github('IRkernel/IRkernel')" && \
-  R -e "IRkernel::installspec()" && R -e "BiocManager::install('Rgraphviz')"
-
-RUN apt-get update && apt-get install -y librsvg2-dev
-
-RUN R -e "install.packages(c('DiagrammeR','DiagrammeRsvg','rsvg'))"
-
-# Install git
-RUN apt-get update && apt-get upgrade -y && apt-get install -y git
+  R -e "IRkernel::installspec()" && R -e "BiocManager::install('Rgraphviz')" && \
+  R -e "install.packages(c('DiagrammeR','DiagrammeRsvg','rsvg'))"
 
 # Clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -72,7 +65,7 @@ USER ml-user
 WORKDIR /home/ml-user
 
 # cert for testing purpose
-RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -subj "/C=CA/ST=BC/L=Vancouver/O=xgboost-test"
+RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -subj "/C=CA/ST=BC/L=Vancouver/O=jupyter-ml-test"
 
 ## Setup Jupyter
 RUN jupyter lab --generate-config && \
