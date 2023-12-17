@@ -1,47 +1,39 @@
-FROM ubuntu:20.04
+FROM debian:12
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG DEBCONF_NONINTERACTIVE_SEEN=true
 
 # Install Ubuntu packages
-RUN apt-get update && apt-get install -y git wget bzip2 ca-certificates \
+RUN apt-get update -qq && apt-get upgrade -y && apt-get install -y software-properties-common && \
+  apt-add-repository contrib non-free && apt-get update -qq
+RUN apt-get install -y git wget bzip2 ca-certificates \
   build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev curl git-core \
-  htop pkg-config unzip unrar tree freetds-dev vim sudo nodejs npm net-tools librsvg2-dev \
-  flex perl automake bison libtool byacc libtiff-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev
-
-#Installing Python and PIP
-RUN apt-get update && apt-get install -y \
-    python3.8 \
-    python3-pip
-
-#Installing all ML python libraries , Jupyter and Extensions 
-# using older version of numpy so we can install numba. removed rff2pandas
-RUN pip3 install scipy==1.8.0 numpy==1.21.6 matplotlib==3.5.1 pandas==1.4.2 statsmodels==0.13.2 scikit-learn==1.0.2 \
-  theano==1.0.5 tensorflow==2.8.0 keras==2.8.0 xgboost==1.6.0 shap==0.40.0 \
-  jupyterlab==3.3.4 \
-  torch==1.12.0 torchvision==0.13.0 torchaudio==0.12.0 ipywidgets==7.7.1 \
-  scikit-plot==0.3.7 kaggle==1.5.12 seaborn==0.11.2 jupyter_contrib_nbextensions==0.5.1 \
-  jupyter_nbextensions_configurator==0.4.1 dowhy==0.7.1 onnx==1.12.0 protobuf==3.20.1 \
-  fairlearn==0.7.0 raiwidgets==0.20.0 mlflow==1.27.0
+  htop pkg-config unzip unrar-free tree freetds-dev vim sudo nodejs npm net-tools librsvg2-dev \
+  flex perl automake bison libtool byacc libtiff-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev python3-pip
 
 #Install Graphviz for python and R
-RUN apt-get update && apt-get install -y graphviz libgraphviz-dev graphviz-dev && pip3 install graphviz==0.20 pygraphviz==1.9 
+RUN apt-get install -y graphviz libgraphviz-dev graphviz-dev python3-graphviz python3-pygraphviz 
 
 #Install R
-RUN apt-get update -qq && \
-  apt-get install -y dirmngr ca-certificates software-properties-common && \
-  wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
-  add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" && \
-  apt-get install -y r-base
-
-#Install rpy2 to run R in pythong Kernels
-RUN pip3 install rpy2==3.5.1
+RUN apt-get install -y r-base r-base-dev
 
 # Install R packages
-RUN R -e "install.packages(c('xgboost','roxygen2', 'rversions','repr', 'IRdisplay', 'evaluate', 'crayon', 'pbdZMQ', 'devtools', 'uuid', 'digest','BiocManager','dplyr','ggplot2','tidyr','igraph','mice'))" && \
-  R -e "devtools::install_github('IRkernel/IRkernel')" && \
-  R -e "IRkernel::installspec()" && R -e "BiocManager::install('Rgraphviz')" && \
-  R -e "install.packages(c('DiagrammeR','DiagrammeRsvg','rsvg'))"
+RUN R -e "install.packages(c('xgboost','roxygen2', 'rversions','repr', 'IRdisplay', 'evaluate', 'crayon', 'pbdZMQ', 'devtools', 'uuid', 'digest','BiocManager','dplyr','ggplot2','tidyr','igraph','mice'), clean=TRUE)" && \
+  R -e "BiocManager::install('Rgraphviz')" && \
+  R -e "install.packages(c('DiagrammeR','DiagrammeRsvg','rsvg'), clean=TRUE)"
+
+# Installing all ML python libraries , Jupyter and Extensions 
+# Removed raiwidgets. MS packages put upper bound on dependencies and make it hard to resolve version conflicts
+RUN pip3 install --break-system-packages --no-cache-dir numpy==1.23.5 \
+  llvmlite==0.41.0 numba==0.58.1 scipy==1.11.4 matplotlib==3.8.2 pandas==2.1.4 statsmodels==0.14.1 scikit-learn==1.2.2 \
+  theano==1.0.5 tensorflow==2.15.0.post1 keras==2.15.0 xgboost==2.0.2 shap==0.41.0 \
+  jupyterlab notebook==6.5.6 \
+  torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 torchtext==0.16.2 timm==0.9.12 ipywidgets==8.1.1 \
+  scikit-plot==0.3.7 kaggle==1.5.16 seaborn==0.13.0 jupyter_contrib_nbextensions==0.7.0 \
+  jupyter_nbextensions_configurator==0.6.3 dowhy==0.8 onnx==1.15.0 protobuf==4.23.4 \
+  fairlearn==0.7.0 mlflow==2.9.2 rpy2==3.5.14 jsonschema[format]==4.20.0
+
+RUN R -e "install.packages('IRkernel', clean=TRUE)" && R -e "IRkernel::installspec(user=FALSE)"
 
 # Clean up
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -62,6 +54,10 @@ RUN mkdir /ml-disk
 RUN useradd -m -d /home/ml-user -s /bin/bash ml-user
 RUN usermod -aG sudo ml-user
 
+RUN jupyter lab --generate-config && \
+  jupyter nbextensions_configurator enable --sys-prefix && \
+  jupyter contrib nbextension install --sys-prefix
+
 USER ml-user
 WORKDIR /home/ml-user
 
@@ -69,19 +65,17 @@ WORKDIR /home/ml-user
 RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout mykey.key -out mycert.pem -subj "/C=CA/ST=BC/L=Vancouver/O=jupyter-ml-test"
 
 ## Setup Jupyter
-RUN jupyter lab --generate-config && \
-  jupyter nbextensions_configurator enable --user && \
-  jupyter contrib nbextension install --user 
+RUN mkdir -p /home/ml-user/.jupyter
 RUN echo "c.ServerApp.certfile = u'/home/ml-user/mycert.pem'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
   echo "c.ServerApp.ip = '*'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
   echo "c.ServerApp.keyfile = u'/home/ml-user/mykey.key'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
   echo "c.ServerApp.notebook_dir = '/ml-disk'" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
   echo "c.ServerApp.open_browser = False" >> /home/ml-user/.jupyter/jupyter_lab_config.py && \
   echo "c.ServerApp.password = 'argon2:\$argon2id\$v=19\$m=10240,t=10,p=8\$S0NsAL2R6FCzDV9DLQzH4g\$Xy4KM24jEjab4o47EOWbaciNPzGm8X0Y9bhgCN2cyiU'" >> /home/ml-user/.jupyter/jupyter_lab_config.py 
+
 COPY entryPoint.sh /root
 USER root
 WORKDIR /root
-
 
 ENTRYPOINT ["sh","entryPoint.sh"]
 
