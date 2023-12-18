@@ -27,7 +27,7 @@ RUN R -e "install.packages(c('xgboost','roxygen2', 'rversions','repr', 'IRdispla
 RUN pip3 install --break-system-packages --no-cache-dir numpy==1.23.5 \
   llvmlite==0.41.0 numba==0.58.1 scipy==1.11.4 matplotlib==3.8.2 pandas==2.1.4 statsmodels==0.14.1 scikit-learn==1.2.2 \
   theano==1.0.5 tensorflow==2.15.0.post1 keras==2.15.0 xgboost==2.0.2 shap==0.41.0 \
-  jupyterlab notebook==6.5.6 \
+  jupyterlab==4.0.9 notebook==6.5.6 \
   torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 torchtext==0.16.2 timm==0.9.12 ipywidgets==8.1.1 \
   scikit-plot==0.3.7 kaggle==1.5.16 seaborn==0.13.0 jupyter_contrib_nbextensions==0.7.0 \
   jupyter_nbextensions_configurator==0.6.3 dowhy==0.8 onnx==1.15.0 protobuf==4.23.4 \
